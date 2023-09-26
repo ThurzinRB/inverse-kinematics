@@ -16,8 +16,13 @@ canvas_width = 800
 canvas_height = 600
 m = 5*16.000
 n = 5*9.400
-q = 5*15.0
+q = 5*5.0
 degToRad = pi/180
+
+def dist2(x0,y0, x1, y1):
+    return (x0-x1)**2 + (y0-y1)**2
+
+
 
 # Create the canvas
 canvas = pygame.display.set_mode((canvas_width, canvas_height))
@@ -54,7 +59,7 @@ def forwardKinematics(x):
   xq = xn + q * sin(alfa + beta + theta)
   yq = yn + q * cos(alfa + beta + theta)
   thetaG = alfa + beta +theta - pi/2
-  dist = (xq - desiredX)**2 + (yq - desiredY)**2 + (thetaG - desiredTheta)**2
+  dist = (xq - desiredX)**2 + (yq - desiredY)**2  + (thetaG - desiredTheta)**2
   return dist
 
 def drawIK(x):
@@ -113,6 +118,10 @@ while running:
     canvas.fill(white)
     circle(0,0, m+n+q,(0,0,0))
     circle(0,0, m+n,(0,0,0))
+    circle(0,0, m-n,(0,0,0))
+    circle(0,0, m-n+q,(0,0,0))
+    circle(0,0, m+n - q,(0,0,0))
+
 
 
     # Draw the line on the canvas
@@ -126,12 +135,14 @@ while running:
     desiredY*=-1
     mouse_buttons = pygame.mouse.get_pressed()
     font = pygame.font.Font(None, 36)
-    text = font.render(str(desiredTheta*degToRad), True, (0,0,0))
+    text = font.render(str(round(desiredTheta/degToRad)), True, (0,0,0))
     canvas.blit(text, (10, 10))
     # Check if the left mouse button is pressed
     if mouse_buttons[0]:  # Index 0 represents the left button
         desiredTheta+=1*degToRad
-        # desiredTheta = desiredTheta%(2*pi)
+    if mouse_buttons[2]:
+        desiredTheta-=1*degToRad
+    desiredTheta = desiredTheta%(2*pi)
     
     res = minimize(forwardKinematics, x0, method='nelder-mead', options={'xatol': 1e-8, 'disp': True})
     print("RES: ",res.x)
@@ -139,7 +150,11 @@ while running:
     beta = 90*degToRad
     thetaL = 90*degToRad
     x0 = res.x
+    #desiredTheta = alfa + beta + thetaL - pi/2
+    # x0[-1] = desiredTheta - x0[0] - x0[1] +pi/2
     drawIK(res.x)
+    text = font.render(str(round(forwardKinematics(res.x),2)), True, (0,0,0))
+    canvas.blit(text, (10, 40))
 
     # Update the display
     pygame.display.flip()
